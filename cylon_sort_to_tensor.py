@@ -9,6 +9,8 @@ from pycylon.net import MPIConfig
 from cloudmesh.common.StopWatch import StopWatch
 from cloudmesh.common.dotdict import dotdict
 from cloudmesh.common.Shell import Shell
+# from datasets import Dataset
+import torch
 
 def cylon_sort(data=None):
     StopWatch.start(f"sort_total_{data['host']}_{data['rows']}_{data['it']}")
@@ -61,10 +63,20 @@ def cylon_sort(data=None):
     return df3
 
 def df_to_tensor(df):
+    print("Cylon:")
     print(df)
     pd_df = df.to_pandas()
+    print("pandas:")
     print(pd_df)
     # TODO: use huggingface data loader
+    # huggingface = Dataset.from_pandas(pd_df)
+    # print("huggingface:")
+    # print(huggingface)
+
+    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # pt = huggingface.with_format("torch", device=device)
+    # print("torch tensor:")
+    # print(pt)
 
 
 if __name__ == "__main__":
