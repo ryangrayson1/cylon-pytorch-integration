@@ -12,13 +12,9 @@ load:
 
 clean:
 	rm -f *.log *.err script-*.slurm
-	rm -r raptor-*.cfg rp.session.*
 
-rp:  load
-	python rp-experiment-setup.py
-
-cy:
-	python cylon-experiment-setup.py
+run:
+	python experiment_setup.py
 
 q:
 	squeue --format="%.18i %.9P %.50j %.8u %.8T %.10M %.9l %.6D %R" --me
@@ -34,7 +30,6 @@ i:
 	cat out.log
 	cat out.err
 	fgrep "###"  out.log | wc -l
-
 
 cancel:
 	- ./cancel.sh

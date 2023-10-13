@@ -1,2 +1,4 @@
+ENV377
+*.slurm
 *.log
 *.err

@@ -13,7 +13,7 @@ from datasets import Dataset
 import torch
 
 def cylon_sort(data=None):
-    StopWatch.start(f"sort_total_{data['host']}_{data['rows']}_{data['it']}")
+    StopWatch.start(f"sort_total_{data['host']}_{data['rows']}")
 
     comm = MPI.COMM_WORLD
 
@@ -37,30 +37,28 @@ def cylon_sort(data=None):
     if env.rank == 0:
         print("Task# ", data['task'])
 
-    for i in range(data['it']):
-        env.barrier()
-        StopWatch.start(f"sort_{i}_{data['host']}_{data['rows']}_{data['it']}")
-        t1 = time.time()
-        df3 = df1.sort_values(by=[0], env=env)
-        env.barrier()
-        t2 = time.time()
-        t = (t2 - t1)
-        sum_t = comm.reduce(t)
-        tot_l = comm.reduce(len(df3))
+    env.barrier()
+    StopWatch.start(f"sort_{data['host']}_{data['rows']}")
+    t1 = time.time()
+    df3 = df1.sort_values(by=[0], env=env)
+    env.barrier()
+    t2 = time.time()
+    t = (t2 - t1)
+    sum_t = comm.reduce(t)
+    tot_l = comm.reduce(len(df3))
 
-        if env.rank == 0:
-            avg_t = sum_t / env.world_size
-            print("### ", data['scaling'], env.world_size, num_rows, max_val, i, avg_t, tot_l)
-            StopWatch.stop(f"sort_{i}_{data['host']}_{data['rows']}_{data['it']}")
+    if env.rank == 0:
+        print("### ", data['scaling'], env.world_size, num_rows, max_val, sum_t, tot_l)
+        StopWatch.stop(f"sort_{data['host']}_{data['rows']}")
 
-    StopWatch.stop(f"sort_total_{data['host']}_{data['rows']}_{data['it']}")
+    StopWatch.stop(f"sort_total_{data['host']}_{data['rows']}")
 
     if env.rank == 0:
         StopWatch.benchmark(tag=str(data))
 
-    env.finalize()
+    # env.finalize()
 
-    return df3
+    return env, env.rank, df3
 
 def df_to_tensor(df):
     print("Cylon:")
@@ -74,9 +72,32 @@ def df_to_tensor(df):
     print(huggingface)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    pt = huggingface.with_format("torch", device=device)
+    tensor = huggingface.with_format("torch", device=device)
     print("torch tensor:")
-    print(pt)
+    print(tensor)
+
+    return tensor
+
+
+def train(rank, tensor):
+    # TODO
+    torch.manual_seed(1234)
+    model = torch.Net()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.5)
+
+    num_batches = ceil(len(train_set.dataset) / float(bsz))
+    for epoch in range(10):
+        epoch_loss = 0.0
+        for data, target in train_set:
+            optimizer.zero_grad()
+            output = model(data)
+            loss = F.nll_loss(output, target)
+            epoch_loss += loss.item()
+            loss.backward()
+            average_gradients(model)
+            optimizer.step()
+        print('Rank ', dist.get_rank(), ', epoch ',
+              epoch, ': ', epoch_loss / num_batches)
 
 
 if __name__ == "__main__":
@@ -84,12 +105,16 @@ if __name__ == "__main__":
     parser.add_argument('-n', dest='rows', type=int, required=True)
     parser.add_argument('-i', dest='it', type=int, default=2)
     parser.add_argument('-u', dest='unique', type=float, default=0.9, help="unique factor")
-    parser.add_argument('-s', dest='scaling', type=str, default='s', choices=['s', 'w'],
-                        help="s=strong w=weak")
+    parser.add_argument('-s', dest='scaling', type=str, default='s', choices=['s', 'w'], help="s=strong w=weak")
 
     args = vars(parser.parse_args())
     args['host'] = "rivanna"
     args['task'] = 1
 
-    srtd = cylon_sort(args)
-    df_to_tensor(srtd)
+    env, rank, srtd_df = cylon_sort(args)
+
+    tensor = df_to_tensor(srtd_df)
+
+    train(rank, tensor)
+
+    env.finalize()
