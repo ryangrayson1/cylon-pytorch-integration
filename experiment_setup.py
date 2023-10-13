@@ -12,8 +12,9 @@ CYLON_BUILD_PATH = "/project/bii_dsc_community/rtg5xkh/cylon/build"
 
 # add all test files here
 TEST_FILENAMES = [
-	"scripts/cylon_sort_to_tensor.py",
-	"scripts/cylon_dist_sort_to_training.py",
+	"scripts/dist_sort_to_dist_training_strong.py",
+	# "scripts/cylon_dist_sort_test.py",
+	# "scripts/cylon_scaling.py",
 ]
 # or set this flag to run all files in a directory of your choice.
 # if this is not empty it will be used. do not include a trailing slash.
@@ -27,13 +28,13 @@ PARTITION = "parallel" # "bii-gpu"
 
 # (nodes, threads, rows, partition, "exclusive")
 TEST_PARAMS = [
-	(2,37, 1000000, "parallel", ""),
-	# (4,37, 35000000, "parallel", ""),
-	# (6,37, 35000000, "parallel", ""),
-	# (8,37, 35000000, "parallel", ""),
-	# (10,37, 35000000, "parallel", ""),
-	# (12,37, 35000000, "parallel", ""),
-	# (14,37, 35000000, "parallel", ""),
+	(2, 37, 100000, "parallel", ""),
+	# (4, 37, 35000000, "parallel", ""),
+	# (6, 37, 35000000, "parallel", ""),
+	# (8, 37, 35000000, "parallel", ""),
+	# (10, 37, 35000000, "parallel", ""),
+	# (12, 37, 35000000, "parallel", ""),
+	# (14, 37, 35000000, "parallel", ""),
 ]
 
 '''
@@ -48,7 +49,7 @@ if RUN_ALL_FILES_IN_DIR != "":
 		if filename.endswith(".py"):
 			TEST_FILENAMES.append(RUN_ALL_FILES_IN_DIR + '/' + filename)
 
-jobid="-%j"
+jobid = "%j"
 timestamp = datetime.now().strftime("%H:%M:%S")
 num_tests = len(TEST_PARAMS)
 counter = 0

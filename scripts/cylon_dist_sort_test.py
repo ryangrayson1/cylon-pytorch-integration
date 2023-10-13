@@ -106,7 +106,6 @@ if __name__ == "__main__":
     parser.add_argument('-i', dest='it', type=int, default=2)
     parser.add_argument('-u', dest='unique', type=float, default=0.9, help="unique factor")
     parser.add_argument('-s', dest='scaling', type=str, default='s', choices=['s', 'w'], help="s=strong w=weak")
-
     args = vars(parser.parse_args())
     args['host'] = "rivanna"
     args['task'] = 1
