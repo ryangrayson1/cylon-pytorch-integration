@@ -12,18 +12,21 @@ CYLON_BUILD_PATH = "/project/bii_dsc_community/rtg5xkh/cylon/build"
 
 # add all test files here
 TEST_FILENAMES = [
-	"cylon_sort_to_tensor.py",
-	"cylon_dist_sort_to_training.py",
+	"scripts/cylon_sort_to_tensor.py",
+	"scripts/cylon_dist_sort_to_training.py",
 ]
+# or set this flag to run all files in a directory of your choice.
+# if this is not empty it will be used. do not include a trailing slash.
+RUN_ALL_FILES_IN_DIR = ""
 
-counter = 0
-debug = False
+# Debug mode will do the setup steps but will not submit the jobs
+DEBUG = False
 
-partition = "bii-gpu"
-partition = "parallel"
+# set the desired partition
+PARTITION = "parallel" # "bii-gpu"
 
 # (nodes, threads, rows, partition, "exclusive")
-test_params = [
+TEST_PARAMS = [
 	(2,37, 1000000, "parallel", ""),
 	# (4,37, 35000000, "parallel", ""),
 	# (6,37, 35000000, "parallel", ""),
@@ -34,18 +37,23 @@ test_params = [
 ]
 
 '''
-test_params = []
-for nodes in range(0,50):
-	for threads in range(0,37):
-		test_params.append((nodes+1, threads+1, "parallel", ""))
+for nodes in range(1, 51):
+	for threads in range(1, 38):
+		TEST_PARAMS.append((nodes, threads, PARTITION, ""))
 '''
 
-num_tests = len(test_params)
+if RUN_ALL_FILES_IN_DIR != "":
+	TEST_FILENAMES.clear()
+	for filename in os.listdir(RUN_ALL_FILES_IN_DIR):
+		if filename.endswith(".py"):
+			TEST_FILENAMES.append(RUN_ALL_FILES_IN_DIR + '/' + filename)
+
 jobid="-%j"
 timestamp = datetime.now().strftime("%H:%M:%S")
-
+num_tests = len(TEST_PARAMS)
+counter = 0
 submit_file = open("submit.log", "w")
-for nodes, threads, rows, partition, exclusive in test_params:
+for nodes, threads, rows, partition, exclusive in TEST_PARAMS:
 	counter += 1
 
 	if exclusive == "exclusive":
@@ -57,24 +65,8 @@ for nodes, threads, rows, partition, exclusive in test_params:
 
 	usable_threads = nodes * threads
 
-	'''
-	cores_per_node = nodes * threads - 2
-
-	print (cores_per_node)
-
-	config = readfile("raptor.in.cfg")
-
-	config = config.replace("CORES_PER_NODE", str(cores_per_node))
-	config = config.replace("NO_OF_ROWS", str(rows))
-
-	print (config)
-
-	cfg_filename = f"raptor-{nodes}-{threads}.cfg"
-
-	writefile(cfg_filename, config)
-	'''
-
 	for filename in TEST_FILENAMES:
+		filename_no_path = filename.split("/")[-1]
 		banner(f"SLURM {nodes} {threads} {counter}/{num_tests}")
 		script=dedent(f"""
 		#!/bin/bash
@@ -82,8 +74,8 @@ for nodes, threads, rows, partition, exclusive in test_params:
 		#SBATCH --nodes={nodes}
 		#SBATCH --ntasks-per-node={threads}
 		#SBATCH --time=15:00
-		#SBATCH --output={timestamp}-{filename}-{nodes:02d}-{threads:02d}-{jobid}.log
-		#SBATCH --error={timestamp}-{filename}-{nodes:02d}-{threads:02d}-{jobid}.err
+		#SBATCH --output={timestamp}-{filename_no_path}-{nodes:02d}-{threads:02d}-{jobid}.log
+		#SBATCH --error={timestamp}-{filename_no_path}-{nodes:02d}-{threads:02d}-{jobid}.err
 		#SBATCH --partition=parallel
 		#SBATCH -A bii_dsc_community
 		{exclusive}
@@ -110,7 +102,7 @@ for nodes, threads, rows, partition, exclusive in test_params:
 		slurm_file = f"script-{nodes:02d}-{threads:02d}.slurm"
 		writefile(slurm_file, script)
 
-		if not debug:
+		if not DEBUG:
 			r = os.system(f"sbatch {slurm_file}")
 			total = nodes * threads
 			if r == 0:
