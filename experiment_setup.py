@@ -12,9 +12,11 @@ CYLON_BUILD_PATH = "/project/bii_dsc_community/rtg5xkh/cylon/build"
 
 # add all test files here
 TEST_FILENAMES = [
-	"scripts/dist_sort_to_dist_training_strong.py",
-	# "scripts/cylon_dist_sort_test.py",
 	# "scripts/cylon_scaling.py",
+	# "scripts/torch_training.py",
+	"scripts/torch_dist_training.py",
+	# "scripts/cylon_dist_sort_test.py",
+	# "scripts/dist_sort_to_dist_training_strong.py",
 ]
 # or set this flag to run all files in a directory of your choice.
 # if this is not empty it will be used. do not include a trailing slash.
@@ -23,12 +25,11 @@ RUN_ALL_FILES_IN_DIR = ""
 # Debug mode will do the setup steps but will not submit the jobs
 DEBUG = False
 
-# set the desired partition
-PARTITION = "parallel" # "bii-gpu"
-
 # (nodes, threads, rows, partition, "exclusive")
 TEST_PARAMS = [
-	(2, 37, 100000, "parallel", ""),
+	# (1, 1, 10000, "standard", ""),
+	(2, 2, 10000, "parallel", ""),
+	# (2, 37, 10000, "parallel", ""),
 	# (4, 37, 35000000, "parallel", ""),
 	# (6, 37, 35000000, "parallel", ""),
 	# (8, 37, 35000000, "parallel", ""),
@@ -38,6 +39,7 @@ TEST_PARAMS = [
 ]
 
 '''
+PARTITION = "parallel"
 for nodes in range(1, 51):
 	for threads in range(1, 38):
 		TEST_PARAMS.append((nodes, threads, PARTITION, ""))
@@ -95,7 +97,7 @@ for nodes, threads, rows, partition, exclusive in TEST_PARAMS:
 		echo "..............................................................."
 		lscpu
 		echo "..............................................................."
-		time srun --exact --nodes {nodes} --ntasks {usable_threads}  python {filename} -n {rows}
+		time srun --exact --nodes {nodes} --ntasks {usable_threads} python {filename} -n {rows}
 		echo "..............................................................."
 		""").strip()
 
